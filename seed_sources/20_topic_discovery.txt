@@ -1,0 +1,4 @@
+# Topic discovery seeds.
+#
+# Add manually reviewed discovery pages for your own deployment. Public releases
+# keep this file empty so the repository does not prescribe crawl targets.

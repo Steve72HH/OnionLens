@@ -1,0 +1,170 @@
+services:
+  tor:
+    image: dperson/torproxy
+    networks:
+      - onionlens_private
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - onionlens_db_data:/var/lib/postgresql/data
+    configs:
+      - source: onionlens_db_init
+        target: /docker-entrypoint-initdb.d/init.sql
+    networks:
+      - onionlens_private
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.onionlens.stateful == true
+      restart_policy:
+        condition: any
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    environment:
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+    volumes:
+      - onionlens_meili_data:/meili_data
+    networks:
+      - onionlens_private
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.onionlens.stateful == true
+      restart_policy:
+        condition: any
+
+  backend:
+    image: ${ONIONLENS_IMAGE_PREFIX}/backend:${ONIONLENS_IMAGE_TAG}
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MEILI_HOST: http://meilisearch:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_INDEX: ${MEILI_INDEX}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS}
+      STATS_API_KEY: ${STATS_API_KEY}
+    ports:
+      - target: 8000
+        published: 8000
+        protocol: tcp
+        mode: ingress
+    networks:
+      - onionlens_private
+      - onionlens_public
+    deploy:
+      replicas: 3
+      update_config:
+        order: start-first
+      restart_policy:
+        condition: any
+
+  crawler:
+    image: ${ONIONLENS_IMAGE_PREFIX}/crawler:${ONIONLENS_IMAGE_TAG}
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TOR_PROXY: socks5h://tor:9050
+      CRAWL_DELAY_SECONDS: ${CRAWL_DELAY_SECONDS}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS}
+      MAX_RESPONSE_BYTES: ${MAX_RESPONSE_BYTES}
+      MAX_TEXT_CHARS: ${MAX_TEXT_CHARS}
+      MAX_DEPTH: ${MAX_DEPTH}
+      MAX_SITES: ${MAX_SITES}
+      SEED_FILE: /app/seeds.txt
+      SEED_SOURCE_DIR: /app/seed_sources
+      USER_AGENT: ${USER_AGENT}
+    configs:
+      - source: onionlens_seeds
+        target: /app/seeds.txt
+      - source: onionlens_seed_official
+        target: /app/seed_sources/00_official_public.txt
+      - source: onionlens_seed_topics
+        target: /app/seed_sources/20_topic_discovery.txt
+      - source: onionlens_seed_software
+        target: /app/seed_sources/30_software_docs.txt
+    networks:
+      - onionlens_private
+    deploy:
+      replicas: 6
+      restart_policy:
+        condition: any
+
+  indexer:
+    image: ${ONIONLENS_IMAGE_PREFIX}/indexer:${ONIONLENS_IMAGE_TAG}
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MEILI_HOST: http://meilisearch:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_INDEX: ${MEILI_INDEX}
+      INDEX_BATCH_SIZE: ${INDEX_BATCH_SIZE}
+      INDEX_INTERVAL_SECONDS: ${INDEX_INTERVAL_SECONDS}
+    networks:
+      - onionlens_private
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: any
+
+  frontend:
+    image: ${ONIONLENS_IMAGE_PREFIX}/frontend:${ONIONLENS_IMAGE_TAG}
+    environment:
+      PUBLIC_BACKEND_URL: ${PUBLIC_BACKEND_URL}
+    ports:
+      - target: 3000
+        published: 3000
+        protocol: tcp
+        mode: ingress
+    networks:
+      - onionlens_public
+    deploy:
+      replicas: 3
+      update_config:
+        order: start-first
+      restart_policy:
+        condition: any
+
+configs:
+  onionlens_db_init:
+    file: ../db/init.sql
+  onionlens_seeds:
+    file: ../crawler/seeds.txt
+  onionlens_seed_official:
+    file: ../seed_sources/00_official_public.txt
+  onionlens_seed_topics:
+    file: ../seed_sources/20_topic_discovery.txt
+  onionlens_seed_software:
+    file: ../seed_sources/30_software_docs.txt
+
+networks:
+  onionlens_private:
+    driver: overlay
+    internal: true
+  onionlens_public:
+    driver: overlay
+
+volumes:
+  onionlens_db_data:
+  onionlens_meili_data:

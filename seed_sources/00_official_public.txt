@@ -1,0 +1,8 @@
+# OnionLens curated public seed set.
+#
+# Public releases intentionally ship without active onion seeds. Add official,
+# public-interest onion services only after manual review and legal/abuse-policy
+# checks. Keep one URL per line and leave comments prefixed with '#'.
+#
+# Example placeholder:
+# http://exampleonionaddress.onion/

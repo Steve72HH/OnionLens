@@ -1,0 +1,3 @@
+# Software/documentation seeds.
+#
+# Add official, public documentation onion URLs after manual review.

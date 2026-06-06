@@ -1,0 +1,8 @@
+# Add one reviewed seed URL per line.
+#
+# Public releases intentionally ship without active seeds. Start with official,
+# public-interest onion services that you have manually verified and are allowed
+# to crawl.
+#
+# Example placeholder:
+# http://exampleonionaddress.onion/

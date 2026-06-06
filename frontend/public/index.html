@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OnionLens</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/config.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="search-panel">
+        <div class="brand">
+          <span class="mark">OL</span>
+          <div>
+            <h1>OnionLens</h1>
+            <p>Textbasierte Onion-Suche mit Warnlabels und nachvollziehbarem Index.</p>
+          </div>
+        </div>
+
+        <form id="searchForm" class="search-box">
+          <input id="query" name="q" type="search" autocomplete="off" placeholder="Suchbegriff eingeben" />
+          <button type="submit">Suchen</button>
+        </form>
+
+        <div id="stats" class="stats"></div>
+      </section>
+
+      <section class="results-shell">
+        <div id="status" class="status">Bereit.</div>
+        <ol id="results" class="results"></ol>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

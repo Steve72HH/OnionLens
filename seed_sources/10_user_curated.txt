@@ -1,0 +1,4 @@
+# User-curated seeds.
+#
+# Add reviewed onion URLs here for local/private deployments. Do not commit
+# sensitive, private, or unreviewed target lists.
